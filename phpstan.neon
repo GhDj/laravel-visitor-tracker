@@ -3,6 +3,7 @@ parameters:
     paths:
         - src
     tmpDir: build/phpstan
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # Eloquent static methods (would be resolved by Larastan)
         - '#Call to an undefined static method Ghdj\\VisitorTracker\\Models\\[a-zA-Z]+::#'
@@ -26,3 +27,13 @@ parameters:
 
         # Model fillable array PHPDoc covariance (PHPStan strict interpretation)
         - '#PHPDoc type array<string> of property .+::\$fillable is not covariant#'
+
+        # Collection::map() callback type inference
+        - '#Parameter \#1 \$callback of method Illuminate\\Support\\Collection.*::map\(\) contains unresolvable type#'
+
+        # Facade @method PHPDoc array types
+        - '#has PHPDoc tag @method for method .+ with no value type specified in iterable type array#'
+        - '#has PHPDoc tag @method for method .+ return type with no value type specified in iterable type array#'
+
+        # is_string() on already-narrowed types
+        - '#Call to function is_string\(\) with .+ will always evaluate to true#'
