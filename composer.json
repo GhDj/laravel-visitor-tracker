@@ -1,0 +1,74 @@
+{
+    "name": "ghdj/laravel-visitor-tracker",
+    "description": "A comprehensive visitor tracking package for Laravel applications with analytics, geolocation, and bot detection - zero external dependencies",
+    "keywords": [
+        "laravel",
+        "visitor",
+        "tracking",
+        "analytics",
+        "statistics",
+        "geolocation",
+        "bot-detection",
+        "zero-dependency"
+    ],
+    "homepage": "https://github.com/ghdj/laravel-visitor-tracker",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "ghdj",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/contracts": "^10.0|^11.0|^12.0",
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/http": "^10.0|^11.0|^12.0",
+        "illuminate/support": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "nunomaduro/collision": "^7.0|^8.0",
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "pestphp/pest": "^2.0|^3.0",
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0",
+        "phpstan/phpstan": "^1.10|^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ghdj\\VisitorTracker\\": "src/"
+        },
+        "files": [
+            "src/Helpers/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ghdj\\VisitorTracker\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ghdj\\VisitorTracker\\VisitorTrackerServiceProvider"
+            ],
+            "aliases": {
+                "VisitorTracker": "Ghdj\\VisitorTracker\\Facades\\VisitorTracker"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

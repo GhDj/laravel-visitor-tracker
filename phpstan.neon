@@ -1,0 +1,28 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    tmpDir: build/phpstan
+    ignoreErrors:
+        # Eloquent static methods (would be resolved by Larastan)
+        - '#Call to an undefined static method Ghdj\\VisitorTracker\\Models\\[a-zA-Z]+::#'
+
+        # Eloquent model relationships and scopes (need Larastan for proper inference)
+        - '#should return Illuminate\\Database\\Eloquent\\Relations\\#'
+        - '#should return Illuminate\\Database\\Eloquent\\Builder<#'
+        - '#Unable to resolve the template type TRelatedModel#'
+        - '#does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations#'
+
+        # Collection generic types from DB queries
+        - '#return type with generic class Illuminate\\Support\\Collection does not specify its types#'
+        - '#Return type of call to method Illuminate\\Support\\Collection.*::map\(\) contains unresolvable type#'
+
+        # stdClass objects from DB::table() queries
+        - '#Access to an undefined property object::#'
+        - '#Call to an undefined method object::#'
+
+        # Cache::remember callable type
+        - '#Parameter \#3 \$callback of static method Illuminate\\Support\\Facades\\Cache::remember\(\) expects Closure#'
+
+        # Model fillable array PHPDoc covariance (PHPStan strict interpretation)
+        - '#PHPDoc type array<string> of property .+::\$fillable is not covariant#'
