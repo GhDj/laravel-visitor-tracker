@@ -343,5 +343,19 @@ return [
         |
         */
         'gate' => null,
+
+        /*
+        |----------------------------------------------------------------------
+        | Allow Unprotected Dashboard (NOT RECOMMENDED)
+        |----------------------------------------------------------------------
+        |
+        | When dashboard.enabled is true the package refuses to register routes
+        | unless at least one of token/gate/auth-middleware is configured. Set
+        | this to true to bypass that check (e.g. behind your own VPN/IP allow
+        | list). The protection check is auto-skipped in the testing
+        | environment regardless.
+        |
+        */
+        'allow_unprotected' => false,
     ],
 ];

@@ -322,8 +322,11 @@ For Laravel 10, see `app/Http/Middleware/TrustProxies.php`.
 
 > **Security:** When `dashboard.enabled` is `true`, the package will refuse to
 > boot unless at least one of `dashboard.token`, `dashboard.gate`, or an `auth*`
-> entry in `dashboard.middleware` is configured. There is no path to publishing
-> a publicly accessible dashboard by accident.
+> entry in `dashboard.middleware` is configured. The check is auto-skipped in
+> the `testing` environment so your test suite can exercise the controller
+> directly. To bypass it intentionally elsewhere (e.g. you front the dashboard
+> with a network-level access control), set
+> `visitor-tracker.dashboard.allow_unprotected = true`.
 
 
 The dashboard is **always protected**. Choose an authentication method based on your site:
