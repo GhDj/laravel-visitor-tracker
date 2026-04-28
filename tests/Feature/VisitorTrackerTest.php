@@ -116,7 +116,7 @@ test('can get statistics summary', function () {
 });
 
 test('visitor helper function works', function () {
-    expect(visitor())->toBeInstanceOf(\Ghdj\VisitorTracker\VisitorTracker::class);
+    expect(visitor())->toBeInstanceOf(Ghdj\VisitorTracker\VisitorTracker::class);
 });
 
 test('can enable and disable tracking', function () {

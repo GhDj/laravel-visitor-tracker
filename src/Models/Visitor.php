@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ghdj\VisitorTracker\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,9 +30,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $region
  * @property float|null $latitude
  * @property float|null $longitude
- * @property \Carbon\Carbon|null $last_activity_at
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property CarbonInterface|null $last_activity_at
+ * @property CarbonInterface $created_at
+ * @property CarbonInterface $updated_at
  */
 class Visitor extends Model
 {

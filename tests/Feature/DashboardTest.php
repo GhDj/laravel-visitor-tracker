@@ -1,5 +1,6 @@
 <?php
 
+use Ghdj\VisitorTracker\Http\Controllers\DashboardController;
 use Ghdj\VisitorTracker\Middleware\AuthorizeDashboard;
 use Ghdj\VisitorTracker\Models\Visitor;
 use Illuminate\Support\Facades\Gate;
@@ -18,9 +19,9 @@ describe('dashboard controller', function () {
             'prefix' => config('visitor-tracker.dashboard.prefix'),
             'middleware' => ['web'],
         ], function ($router) {
-            $router->get('/', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'index'])
+            $router->get('/', [DashboardController::class, 'index'])
                 ->name('visitor-tracker.dashboard');
-            $router->get('/stats', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'stats'])
+            $router->get('/stats', [DashboardController::class, 'stats'])
                 ->name('visitor-tracker.stats');
         });
     });
@@ -81,7 +82,7 @@ describe('dashboard controller', function () {
             'prefix' => 'custom/stats',
             'middleware' => ['web'],
         ], function ($router) {
-            $router->get('/', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'index']);
+            $router->get('/', [DashboardController::class, 'index']);
         });
 
         $response = $this->get('/custom/stats');
@@ -105,8 +106,8 @@ describe('dashboard gate authorization', function () {
             'prefix' => config('visitor-tracker.dashboard.prefix'),
             'middleware' => ['web', 'visitor-tracker-auth'],
         ], function ($router) {
-            $router->get('/', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'index']);
-            $router->get('/stats', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'stats']);
+            $router->get('/', [DashboardController::class, 'index']);
+            $router->get('/stats', [DashboardController::class, 'stats']);
         });
     });
 
@@ -159,8 +160,8 @@ describe('dashboard token authorization', function () {
             'prefix' => config('visitor-tracker.dashboard.prefix'),
             'middleware' => ['web', 'visitor-tracker-auth'],
         ], function ($router) {
-            $router->get('/', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'index']);
-            $router->get('/stats', [\Ghdj\VisitorTracker\Http\Controllers\DashboardController::class, 'stats']);
+            $router->get('/', [DashboardController::class, 'index']);
+            $router->get('/stats', [DashboardController::class, 'stats']);
         });
     });
 
