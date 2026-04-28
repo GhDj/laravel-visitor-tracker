@@ -105,6 +105,7 @@ return [
         'ips' => [
             // '127.0.0.1',
             // '192.168.0.0/16',
+            // '2001:db8::/32',  // IPv6 CIDR is supported
         ],
 
         /*
@@ -200,6 +201,13 @@ return [
         | - Persistent cookies (uses session-only identification)
         | - Full user agent storage
         | - Precise geolocation (city, region, coordinates)
+        |
+        | NOTE: GDPR Safe Mode prefers Laravel's session ID for identification.
+        | If sessions are not available on the request, the tracker falls back to
+        | a daily hash of the User-Agent string. This is non-persistent across
+        | days but groups requests with the same UA within the same calendar day
+        | for aggregate counting. Make sure Laravel sessions are configured
+        | (web middleware group) for the strongest privacy posture.
         |
         | Only collected:
         | - Page view counts (aggregate)

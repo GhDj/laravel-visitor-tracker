@@ -366,30 +366,66 @@ class StatisticsService
 
     /**
      * Clear all cached statistics.
+     *
+     * Forgets every key the service has ever cached during this app instance's
+     * lifetime via the internal key registry. The registry is itself a cache
+     * entry so it survives across requests (works on file/database/redis drivers
+     * — no cache-tag support required).
      */
     public function clearCache(): void
     {
         $prefix = config('visitor-tracker.cache.prefix', 'visitor_tracker_');
+        $registryKey = $prefix.'__keys';
 
-        // Clear known cache keys
-        $keys = [
-            'total_visitors_all',
-            'total_page_views_all',
-            'today_visitors',
-            'today_page_views',
-            'device_stats',
-        ];
+        $keys = Cache::get($registryKey, []);
+        if (! is_array($keys)) {
+            $keys = [];
+        }
 
         foreach ($keys as $key) {
-            Cache::forget($prefix.$key);
+            if (is_string($key)) {
+                Cache::forget($key);
+            }
         }
+
+        Cache::forget($registryKey);
+    }
+
+    /**
+     * Record a cache key in the registry so clearCache() can purge it later.
+     */
+    protected function registerCacheKey(string $fullKey): void
+    {
+        $prefix = config('visitor-tracker.cache.prefix', 'visitor_tracker_');
+        $registryKey = $prefix.'__keys';
+
+        $keys = Cache::get($registryKey, []);
+        if (! is_array($keys)) {
+            $keys = [];
+        }
+
+        if (in_array($fullKey, $keys, true)) {
+            return;
+        }
+
+        $keys[] = $fullKey;
+
+        // Registry has no natural TTL; keep it for ~30 days. clearCache() also wipes it.
+        Cache::put($registryKey, $keys, now()->addDays(30));
     }
 
     /**
      * Get database-agnostic date expression for grouping.
+     *
+     * @throws \InvalidArgumentException when the column name doesn't match a
+     *                                   simple identifier (defends raw-SQL interpolation).
      */
     protected function getDateExpression(string $column, string $period): string
     {
+        if (! preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/', $column)) {
+            throw new \InvalidArgumentException("Invalid column name: {$column}");
+        }
+
         $driver = DB::getDriverName();
 
         if ($driver === 'sqlite') {
@@ -445,7 +481,10 @@ class StatisticsService
 
         $prefix = config('visitor-tracker.cache.prefix', 'visitor_tracker_');
         $ttl = $ttl ?? (int) config('visitor-tracker.cache.ttl', 60);
+        $fullKey = $prefix.$key;
 
-        return Cache::remember($prefix.$key, now()->addMinutes($ttl), $callback);
+        $this->registerCacheKey($fullKey);
+
+        return Cache::remember($fullKey, now()->addMinutes($ttl), $callback);
     }
 }

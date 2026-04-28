@@ -11,8 +11,10 @@ use Ghdj\VisitorTracker\Services\BotDetector;
 use Ghdj\VisitorTracker\Services\GeoLocationService;
 use Ghdj\VisitorTracker\Services\StatisticsService;
 use Ghdj\VisitorTracker\Services\UserAgentParser;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -114,9 +116,9 @@ class VisitorTracker
             $geoData = $this->filterGeoDataForGdpr($geoData);
         }
 
-        // Get or create visitor
-        $visitor = Visitor::firstOrCreate(
-            ['session_id' => $sessionId],
+        // Get or create visitor (race-safe)
+        $visitor = $this->firstOrCreateVisitor(
+            $sessionId,
             array_merge([
                 'ip' => $ip,
                 'user_agent' => $gdprSafe ? null : $userAgent,
@@ -223,11 +225,8 @@ class VisitorTracker
             'last_activity_at' => now(),
         ], $parsed, $geoData);
 
-        // Find existing visitor or create new one
-        $visitor = Visitor::firstOrCreate(
-            ['session_id' => $sessionId],
-            $visitorData
-        );
+        // Find existing visitor or create new one (race-safe)
+        $visitor = $this->firstOrCreateVisitor($sessionId, $visitorData);
 
         // Update user_id if visitor logged in (skip in GDPR safe mode)
         if (! $gdprSafe && $request->user() && ! $visitor->user_id) {
@@ -235,6 +234,32 @@ class VisitorTracker
         }
 
         return $visitor;
+    }
+
+    /**
+     * Atomically find an existing visitor by session_id or create one.
+     *
+     * Wraps the lookup-then-insert in a transaction and recovers from a
+     * concurrent insert (unique constraint violation on session_id) by
+     * re-fetching the row that the other request just created.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function firstOrCreateVisitor(string $sessionId, array $attributes): Visitor
+    {
+        try {
+            return DB::transaction(function () use ($sessionId, $attributes) {
+                return Visitor::firstOrCreate(['session_id' => $sessionId], $attributes);
+            });
+        } catch (QueryException $e) {
+            // Concurrent insert won the race — re-fetch the existing row.
+            $existing = Visitor::where('session_id', $sessionId)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            throw $e;
+        }
     }
 
     /**

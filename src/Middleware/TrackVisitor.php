@@ -164,23 +164,71 @@ class TrackVisitor
     }
 
     /**
-     * Check if an IP is within a CIDR range.
+     * Check if an IP is within a CIDR range. Supports both IPv4 and IPv6.
      */
     protected function ipInCidr(string $ip, string $cidr): bool
     {
-        [$subnet, $mask] = explode('/', $cidr);
-
-        $ipLong = ip2long($ip);
-        $subnetLong = ip2long($subnet);
-
-        if ($ipLong === false || $subnetLong === false) {
+        if (! str_contains($cidr, '/')) {
             return false;
         }
 
-        $maskLong = -1 << (32 - (int) $mask);
-        $subnetLong &= $maskLong;
+        [$subnet, $maskStr] = explode('/', $cidr, 2);
+        $mask = (int) $maskStr;
 
-        return ($ipLong & $maskLong) === $subnetLong;
+        $ipIsV4 = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+        $subnetIsV4 = filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+
+        if ($ipIsV4 !== $subnetIsV4) {
+            return false;
+        }
+
+        if ($ipIsV4) {
+            if ($mask < 0 || $mask > 32) {
+                return false;
+            }
+
+            $ipLong = ip2long($ip);
+            $subnetLong = ip2long($subnet);
+
+            if ($ipLong === false || $subnetLong === false) {
+                return false;
+            }
+
+            if ($mask === 0) {
+                return true;
+            }
+
+            $maskLong = -1 << (32 - $mask);
+
+            return ($ipLong & $maskLong) === ($subnetLong & $maskLong);
+        }
+
+        // IPv6
+        if ($mask < 0 || $mask > 128) {
+            return false;
+        }
+
+        $ipBin = inet_pton($ip);
+        $subnetBin = inet_pton($subnet);
+
+        if ($ipBin === false || $subnetBin === false) {
+            return false;
+        }
+
+        $bytes = intdiv($mask, 8);
+        $remainingBits = $mask % 8;
+
+        if ($bytes > 0 && substr($ipBin, 0, $bytes) !== substr($subnetBin, 0, $bytes)) {
+            return false;
+        }
+
+        if ($remainingBits === 0) {
+            return true;
+        }
+
+        $maskByte = (~((1 << (8 - $remainingBits)) - 1)) & 0xFF;
+
+        return (ord($ipBin[$bytes]) & $maskByte) === (ord($subnetBin[$bytes]) & $maskByte);
     }
 
     /**
