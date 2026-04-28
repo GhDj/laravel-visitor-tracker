@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Ghdj\VisitorTracker\Services\StatisticsService;
 use Ghdj\VisitorTracker\VisitorTracker;
 
 if (! function_exists('country_flag')) {
@@ -37,7 +38,7 @@ if (! function_exists('visitor_stats')) {
     /**
      * Get the statistics service.
      */
-    function visitor_stats(): \Ghdj\VisitorTracker\Services\StatisticsService
+    function visitor_stats(): StatisticsService
     {
         return app(VisitorTracker::class)->stats();
     }

@@ -297,7 +297,37 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('visitor-tracker:prune --force')->daily();
 ```
 
+## Behind a Reverse Proxy / CDN
+
+If your app sits behind Cloudflare, AWS ALB, nginx, or any other reverse proxy,
+you **must** configure Laravel's `TrustProxies` middleware **before** enabling
+visitor tracking. Without it, every request will appear to come from the proxy's
+IP address — breaking IP exclusions, geolocation accuracy, and IP anonymization.
+
+For Laravel 11/12, in `bootstrap/app.php`:
+
+```php
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->trustProxies(at: '*'); // Or a specific list of proxy IPs
+})
+```
+
+For Laravel 10, see `app/Http/Middleware/TrustProxies.php`.
+
+> **Tip:** trust only the proxies you actually own. Setting `at: '*'` accepts
+> any `X-Forwarded-For` header, which is fine when only your proxy can reach
+> the app, but unsafe if the app is also directly accessible.
+
 ## Dashboard Authentication
+
+> **Security:** When `dashboard.enabled` is `true`, the package will refuse to
+> boot unless at least one of `dashboard.token`, `dashboard.gate`, or an `auth*`
+> entry in `dashboard.middleware` is configured. The check is auto-skipped in
+> the `testing` environment so your test suite can exercise the controller
+> directly. To bypass it intentionally elsewhere (e.g. you front the dashboard
+> with a network-level access control), set
+> `visitor-tracker.dashboard.allow_unprotected = true`.
+
 
 The dashboard is **always protected**. Choose an authentication method based on your site:
 
@@ -401,6 +431,14 @@ When enabled, the following personal data is **NOT collected**:
 | Full User Agent | ❌ Not stored | Only parsed for aggregate stats |
 | City / Region | ❌ Not stored | Only country-level location |
 | Coordinates | ❌ Not stored | No lat/long |
+
+> **Note on session fallback:** GDPR Safe Mode identifies visitors by Laravel's
+> session ID (which lives in a session cookie that expires when the browser closes
+> if you set `SESSION_LIFETIME` accordingly). If the request has no session
+> available at all, the tracker falls back to a daily hash of the User-Agent
+> string for aggregate counting only — this is not individually identifying but
+> does group same-UA requests within a single calendar day. To get the strongest
+> guarantees, ensure your tracked routes go through the `web` middleware group.
 
 **What IS still collected** (anonymous, aggregate data):
 

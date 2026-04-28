@@ -197,7 +197,57 @@ class VisitorTrackerServiceProvider extends ServiceProvider
             return;
         }
 
+        $this->assertDashboardIsProtected();
+
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
+    /**
+     * Refuse to register dashboard routes when no authentication mechanism is set.
+     *
+     * The dashboard exposes potentially sensitive analytics, so we require at least
+     * one of: a secret token, a Gate, or an 'auth*' middleware in dashboard.middleware.
+     *
+     * Skipped in the testing environment so the package's own test suite can
+     * exercise the controller in isolation. Consumers can also opt out per-app
+     * by setting visitor-tracker.dashboard.allow_unprotected to true.
+     *
+     * @throws \RuntimeException
+     */
+    protected function assertDashboardIsProtected(): void
+    {
+        if ($this->app->environment('testing')) {
+            return;
+        }
+
+        if (config('visitor-tracker.dashboard.allow_unprotected', false)) {
+            return;
+        }
+
+        $token = config('visitor-tracker.dashboard.token');
+        $gate = config('visitor-tracker.dashboard.gate');
+        $middleware = (array) config('visitor-tracker.dashboard.middleware', []);
+
+        $hasAuthMiddleware = false;
+        foreach ($middleware as $entry) {
+            if (is_string($entry) && (str_starts_with($entry, 'auth') || str_contains($entry, ':auth'))) {
+                $hasAuthMiddleware = true;
+
+                break;
+            }
+        }
+
+        if ($token || $gate || $hasAuthMiddleware) {
+            return;
+        }
+
+        throw new \RuntimeException(
+            'Visitor Tracker dashboard is enabled but unprotected. Configure at least one of: '
+            .'visitor-tracker.dashboard.token (env VISITOR_TRACKER_TOKEN), '
+            .'visitor-tracker.dashboard.gate, or '
+            .'add an auth middleware (e.g. "auth") to visitor-tracker.dashboard.middleware. '
+            .'To intentionally allow this (not recommended), set visitor-tracker.dashboard.allow_unprotected = true.'
+        );
     }
 
     /**
