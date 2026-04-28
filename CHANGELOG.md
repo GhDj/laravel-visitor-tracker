@@ -2,47 +2,80 @@
 
 All notable changes to `laravel-visitor-tracker` will be documented in this file.
 
-## [Unreleased]
+## [1.1.0] - 2026-04-28
+
+### Fixed
+- **IPv6 CIDR exclusions** — `exclude.ips` entries in IPv6 CIDR notation
+  (e.g. `2001:db8::/32`) are now matched correctly. Previously they were
+  silently ignored because the implementation only used `ip2long()`.
+- **Race condition on visitor creation** — `Visitor::firstOrCreate()` is now
+  wrapped in a transaction with a recovery path for concurrent inserts that
+  hit the `session_id` unique constraint.
+- **`StatisticsService::clearCache()` was incomplete** — it only forgot a
+  hardcoded list of keys, leaving period-bucketed stats (`visitors_by_*`,
+  `most_visited_pages_*`, `bounce_rate_*`, …) stale. The service now keeps
+  an internal key registry so `clearCache()` purges every cached statistic
+  it has produced. Works on file/database/redis/memcached drivers.
+
+### Security
+- **Dashboard misconfiguration guard** — when `dashboard.enabled` is `true`
+  the service provider refuses to register routes unless at least one of
+  `dashboard.token`, `dashboard.gate`, or an `auth*` middleware entry is
+  configured. Prevents accidentally exposing analytics on misconfigured
+  installs.
+- **Defensive validation in `getDateExpression()`** — column names are now
+  matched against a strict identifier regex before being interpolated into
+  raw SQL.
 
 ### Added
-- **GDPR Safe Mode** - Track anonymous aggregate statistics without requiring user consent
-  - No IP address storage (not even anonymized)
-  - No user ID association
-  - No persistent cookies (session-only identification)
-  - No full user agent storage
-  - No precise geolocation (only country-level)
-  - Enable via `VISITOR_TRACKER_GDPR_SAFE=true`
+- **Indexes migration** (`2026_04_28_000001_add_stats_indexes_to_visitor_tables`)
+  — adds indexes on `visitors.created_at`, `(created_at, is_bot)`, `browser`,
+  `platform`, `country_code`, and `(visitor_id, created_at)` on `visits` to
+  match the actual query patterns used by `StatisticsService`. Run
+  `php artisan migrate` after upgrading.
+- New tests: `StatisticsServiceTest` (13 cases) and `GeoLocationServiceTest`
+  (10 cases, with mocked HTTP), plus IPv6 CIDR coverage in `MiddlewareTest`.
+  Total: 125 passing tests (up from 100).
 
-- **Dashboard Token Authentication** - Protect stats dashboard on sites without user authentication
-  - Secret token stored securely in `.env` file
-  - Access via query parameter, header, or Bearer token
-  - Configure via `VISITOR_TRACKER_TOKEN=your-secret-token`
+### Documentation
+- README: new **Behind a Reverse Proxy / CDN** section explaining why
+  Laravel's `TrustProxies` must be configured before tracking middleware.
+- README + config: clarified that GDPR Safe Mode falls back to a daily
+  User-Agent hash when no Laravel session is available, so users understand
+  the actual privacy posture.
+- README: documented the new dashboard auto-protection behavior.
 
-- **Laravel 12 Support** - Package now supports Laravel 10, 11, and 12
+### Upgrade notes
+1. `composer update ghdj/laravel-visitor-tracker`.
+2. `php artisan migrate` to pick up the new index migration.
+3. If you have `dashboard.enabled = true` with no token, gate, or `auth`
+   middleware, the package will now throw at boot — add one (see README).
+4. If you sit behind a proxy/CDN, configure Laravel's `TrustProxies`
+   middleware before the tracking middleware (see README).
 
-- **Comprehensive Middleware Tests** - 29 tests covering all exclusion rules
-  - Path exclusions with wildcards
-  - IP exclusions with CIDR notation
-  - User agent pattern matching
-  - HTTP method filtering
-  - Status code filtering
-  - DNT/GPC header support
-
-## [1.0.0] - 2024-XX-XX
+## [1.0.0] - 2026-01
 
 ### Added
-- Initial release
-- Visitor tracking with session identification
-- Page view tracking with URL, method, and status code
-- **Native bot detection** with 100+ patterns (no external dependencies)
-- **Native user agent parsing** for browser/platform/device detection
-- Geolocation support using Laravel HTTP client (ip-api, ipinfo providers)
-- GDPR compliance (IP anonymization, DNT header support)
-- Statistics service with caching
-- Blade directives for common stats
-- Artisan commands for stats and data pruning
-- Queue support for async tracking
-- Configurable exclusions (paths, IPs, user agents, status codes)
-- Events for custom processing
-- Comprehensive test suite
-- Zero external dependencies (only Laravel illuminate packages)
+- Initial release.
+- Visitor tracking with session identification (cookie-based).
+- Page view tracking with URL, method, referrer, and status code.
+- **Native bot detection** with 100+ patterns (no external dependencies).
+- **Native user agent parsing** for browser/platform/device detection.
+- Geolocation support using Laravel's HTTP client (ip-api, ipinfo, ipapi.co).
+- **GDPR Safe Mode** — anonymous aggregate tracking without consent
+  (no IP, no user ID, no persistent cookie, no full UA, country-level only).
+  Enable via `VISITOR_TRACKER_GDPR_SAFE=true`.
+- IP anonymization (IPv4 + IPv6) and DNT/Sec-GPC header support.
+- Statistics service with caching.
+- Built-in dashboard with three auth modes: token (for sites without login),
+  Laravel auth middleware, and Gate-based authorization.
+- Blade directives: `@totalVisitors`, `@totalPageViews`, `@onlineVisitors`,
+  `@todayVisitors`, `@todayPageViews`.
+- Artisan commands: `visitor-tracker:stats`, `visitor-tracker:prune`,
+  `visitor-tracker:install-dashboard`.
+- Queue support for async tracking.
+- Configurable exclusions (paths, IPs, user agents, methods, status codes).
+- `VisitorTracked` event for custom processing.
+- Laravel 10, 11, and 12 support.
+- Comprehensive test suite (100 tests).
+- Zero external dependencies (only `illuminate/*` packages).

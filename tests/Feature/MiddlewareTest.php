@@ -389,6 +389,48 @@ test('middleware supports multiple IP exclusions', function () {
     expect(Visit::count())->toBe(0);
 });
 
+test('middleware excludes IPv6 in CIDR range', function () {
+    config(['visitor-tracker.exclude.ips' => ['2001:db8::/32']]);
+
+    $request = Request::create('/test', 'GET', [], [], [], [
+        'HTTP_USER_AGENT' => 'Mozilla/5.0 Chrome/120.0.0.0',
+        'REMOTE_ADDR' => '2001:db8:1234::1',
+    ]);
+
+    $middleware = app(TrackVisitor::class);
+    $middleware->handle($request, fn () => new Response('OK', 200));
+
+    expect(Visit::count())->toBe(0);
+});
+
+test('middleware tracks IPv6 outside CIDR range', function () {
+    config(['visitor-tracker.exclude.ips' => ['2001:db8::/32']]);
+
+    $request = Request::create('/test', 'GET', [], [], [], [
+        'HTTP_USER_AGENT' => 'Mozilla/5.0 Chrome/120.0.0.0',
+        'REMOTE_ADDR' => '2001:dead:beef::1',
+    ]);
+
+    $middleware = app(TrackVisitor::class);
+    $middleware->handle($request, fn () => new Response('OK', 200));
+
+    expect(Visit::count())->toBe(1);
+});
+
+test('middleware does not match IPv6 against IPv4 CIDR', function () {
+    config(['visitor-tracker.exclude.ips' => ['10.0.0.0/8']]);
+
+    $request = Request::create('/test', 'GET', [], [], [], [
+        'HTTP_USER_AGENT' => 'Mozilla/5.0 Chrome/120.0.0.0',
+        'REMOTE_ADDR' => '2001:db8::1',
+    ]);
+
+    $middleware = app(TrackVisitor::class);
+    $middleware->handle($request, fn () => new Response('OK', 200));
+
+    expect(Visit::count())->toBe(1);
+});
+
 /*
 |--------------------------------------------------------------------------
 | User Agent Exclusion Tests
