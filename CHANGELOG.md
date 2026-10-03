@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-visitor-tracker` will be documented in this file.
 
+## [1.1.1] - 2026-10-03
+
+### Fixed
+- **Dashboard period filter ignored** — the summary cards (visitors, page views,
+  bounce rate, avg pages/visit) always showed all-time totals regardless of the
+  selected period tab (today/week/month/year). They now correctly reflect the
+  chosen period, with all-time totals shown as a subtitle.
+
 ## [1.1.0] - 2026-04-28
 
 ### Fixed
