@@ -30,12 +30,17 @@
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Visitors -->
+            @php
+                $periodLabels = ['today' => 'Today', 'week' => 'This Week', 'month' => 'This Month', 'year' => 'This Year'];
+                $periodLabel = $periodLabels[$period] ?? 'This Week';
+            @endphp
+
+            <!-- Visitors -->
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Total Visitors</p>
-                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ number_format($summary['total_visitors']) }}</p>
+                        <p class="text-sm font-medium text-gray-500">Visitors — {{ $periodLabel }}</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ number_format($periodVisitors) }}</p>
                     </div>
                     <div class="p-3 bg-blue-100 rounded-full">
                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,16 +49,16 @@
                     </div>
                 </div>
                 <p class="text-sm text-gray-500 mt-2">
-                    <span class="text-green-600 font-medium">{{ number_format($summary['today_visitors']) }}</span> today
+                    {{ number_format($summary['total_visitors']) }} all time
                 </p>
             </div>
 
-            <!-- Total Page Views -->
+            <!-- Page Views -->
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Page Views</p>
-                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ number_format($summary['total_page_views']) }}</p>
+                        <p class="text-sm font-medium text-gray-500">Page Views — {{ $periodLabel }}</p>
+                        <p class="text-3xl font-bold text-gray-800 mt-1">{{ number_format($periodPageViews) }}</p>
                     </div>
                     <div class="p-3 bg-green-100 rounded-full">
                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +68,7 @@
                     </div>
                 </div>
                 <p class="text-sm text-gray-500 mt-2">
-                    <span class="text-green-600 font-medium">{{ number_format($summary['today_page_views']) }}</span> today
+                    {{ number_format($summary['total_page_views']) }} all time
                 </p>
             </div>
 
