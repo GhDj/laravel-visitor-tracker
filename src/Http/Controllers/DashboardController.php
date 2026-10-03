@@ -38,6 +38,8 @@ class DashboardController extends Controller
         return view('visitor-tracker::dashboard', [
             'summary' => $this->stats->summary(),
             'period' => $period,
+            'periodVisitors' => $this->stats->totalVisitors($since),
+            'periodPageViews' => $this->stats->totalPageViews($since),
             'browsers' => $this->stats->browserStats(10),
             'platforms' => $this->stats->platformStats(10),
             'devices' => $this->stats->deviceStats(),
@@ -46,8 +48,8 @@ class DashboardController extends Controller
             'topReferrers' => $this->stats->topReferrers(10, $since),
             'visitorsByDay' => $this->stats->visitorsByPeriod('day', 30),
             'pageViewsByDay' => $this->stats->pageViewsByPeriod('day', 30),
-            'bounceRate' => $this->stats->bounceRate(),
-            'avgPagesPerVisit' => $this->stats->averagePagesPerVisit(),
+            'bounceRate' => $this->stats->bounceRate($since),
+            'avgPagesPerVisit' => $this->stats->averagePagesPerVisit($since),
         ]);
     }
 
