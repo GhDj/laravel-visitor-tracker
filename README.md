@@ -140,8 +140,15 @@ $onlineNow = $stats->onlineVisitors();
 // Today's visitors
 $todayVisitors = $stats->todayVisitors();
 
-// Visitors in last N days
-$weeklyVisitors = $stats->visitorsLastDays(7);
+// New visitors (first seen) since a date
+$newThisWeek = $stats->totalVisitors(now()->startOfWeek());
+
+// Active visitors (new + returning) since a date
+$activeThisWeek = $stats->activeVisitors(now()->startOfWeek());
+
+// Bounce rate (%) and average pages per visit, optionally since a date
+$bounceRate = $stats->bounceRate(now()->startOfMonth());
+$pagesPerVisit = $stats->averagePagesPerVisit(now()->startOfMonth());
 
 // Most visited pages
 $topPages = $stats->mostVisitedPages(10);
@@ -160,6 +167,10 @@ $devices = $stats->deviceStats();
 
 // Country statistics (requires geolocation)
 $countries = $stats->countryStats();
+
+// Breakdowns accept an optional $since to limit them to visitors active in a period
+$browsersToday = $stats->browserStats(10, now()->startOfDay());
+$devicesThisMonth = $stats->deviceStats(now()->startOfMonth());
 
 // Summary of all stats
 $summary = $stats->summary();
