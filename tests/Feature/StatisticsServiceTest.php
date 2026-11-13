@@ -141,6 +141,67 @@ test('averagePagesPerVisit divides views by visitors', function () {
     expect($this->stats->averagePagesPerVisit())->toBe(1.5);
 });
 
+test('activeVisitors includes returning visitors created before the period', function () {
+    $this->travelTo(now()->subMonth());
+    $returning = makeVisitor();
+    makeVisit($returning);
+    $this->travelBack();
+
+    makeVisit($returning, ['path' => '/back']);
+    makeVisit(makeVisitor());
+
+    $since = now()->startOfDay();
+
+    expect($this->stats->activeVisitors($since))->toBe(2)
+        ->and($this->stats->totalVisitors($since))->toBe(1);
+});
+
+test('bounceRate for a period only considers visits in that period and never exceeds 100', function () {
+    // Old visitors who return once this period: each is a bounce for the period.
+    $this->travelTo(now()->subMonth());
+    $old = collect(range(1, 3))->map(fn () => tap(makeVisitor(), fn ($v) => makeVisit($v)));
+    $this->travelBack();
+    $old->each(fn ($v) => makeVisit($v, ['path' => '/again']));
+
+    // One new visitor with two page views: not a bounce.
+    $engaged = makeVisitor();
+    makeVisit($engaged);
+    makeVisit($engaged, ['path' => '/two']);
+
+    expect($this->stats->bounceRate(now()->startOfDay()))->toBe(75.0)
+        ->and($this->stats->bounceRate())->toBe(0.0);
+});
+
+test('averagePagesPerVisit for a period divides by visitors active in that period', function () {
+    $this->travelTo(now()->subMonth());
+    $returning = makeVisitor();
+    $this->travelBack();
+
+    makeVisit($returning);
+    makeVisit($returning, ['path' => '/a']);
+    makeVisit($returning, ['path' => '/b']);
+    makeVisit(makeVisitor());
+
+    expect($this->stats->averagePagesPerVisit(now()->startOfDay()))->toBe(2.0);
+});
+
+test('breakdown stats can be limited to visitors active since a date', function () {
+    $this->travelTo(now()->subMonth());
+    $inactive = makeVisitor(['browser' => 'Firefox', 'platform' => 'Linux', 'device_type' => 'mobile', 'country' => 'France', 'country_code' => 'FR']);
+    makeVisit($inactive);
+    $this->travelBack();
+
+    makeVisit(makeVisitor());
+
+    $since = now()->startOfDay();
+
+    expect($this->stats->browserStats(10, $since)->pluck('browser')->all())->toBe(['Chrome'])
+        ->and($this->stats->platformStats(10, $since)->pluck('platform')->all())->toBe(['Windows'])
+        ->and($this->stats->deviceStats($since)->pluck('device_type')->all())->toBe(['desktop'])
+        ->and($this->stats->countryStats(10, $since)->pluck('country_code')->all())->toBe(['US'])
+        ->and($this->stats->browserStats())->toHaveCount(2);
+});
+
 test('summary returns expected keys', function () {
     expect($this->stats->summary())->toHaveKeys([
         'total_visitors',
