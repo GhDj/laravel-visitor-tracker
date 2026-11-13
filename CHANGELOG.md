@@ -32,6 +32,8 @@ All notable changes to `laravel-visitor-tracker` will be documented in this file
   working examples.
 
 ### Added
+- **Laravel 13 support** (requires PHP 8.3+). CI now tests Laravel 10–13 on
+  PHP 8.2–8.4.
 - `StatisticsService::activeVisitors(?DateTimeInterface $since)`.
 
 ### Security

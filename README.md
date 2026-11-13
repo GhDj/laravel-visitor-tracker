@@ -23,7 +23,7 @@ A comprehensive visitor tracking package for Laravel applications with analytics
 ## Requirements
 
 - PHP 8.1+
-- Laravel 10.x, 11.x, or 12.x
+- Laravel 10.x, 11.x, 12.x, or 13.x (Laravel 13 requires PHP 8.3+)
 
 ## Installation
 
@@ -112,7 +112,7 @@ Route::middleware(['track-visitor'])->group(function () {
     // ... more routes
 });
 
-// Or globally in bootstrap/app.php (Laravel 11)
+// Or globally in bootstrap/app.php (Laravel 11+)
 ->withMiddleware(function (Middleware $middleware) {
     $middleware->web(append: [
         \Ghdj\VisitorTracker\Middleware\TrackVisitor::class,
@@ -315,7 +315,7 @@ you **must** configure Laravel's `TrustProxies` middleware **before** enabling
 visitor tracking. Without it, every request will appear to come from the proxy's
 IP address — breaking IP exclusions, geolocation accuracy, and IP anonymization.
 
-For Laravel 11/12, in `bootstrap/app.php`:
+For Laravel 11/12/13, in `bootstrap/app.php`:
 
 ```php
 ->withMiddleware(function (Middleware $middleware) {
