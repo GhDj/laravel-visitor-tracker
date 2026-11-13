@@ -83,6 +83,9 @@ describe('dashboard controller', function () {
         $old->visits()->create(['url' => 'https://example.test/', 'path' => '/', 'method' => 'GET']);
         $this->travelBack();
 
+        // The returning visitor views one page today (a bounce for this period).
+        $old->visits()->create(['url' => 'https://example.test/', 'path' => '/', 'method' => 'GET']);
+
         $new = Visitor::create([
             'session_id' => 'new-session',
             'ip' => '192.168.1.3',
@@ -94,11 +97,11 @@ describe('dashboard controller', function () {
 
         $response = $this->get('/admin/visitor-tracker?period=today');
 
-        $response->assertViewHas('periodVisitors', 1);
-        $response->assertViewHas('periodPageViews', 2);
-        $response->assertViewHas('bounceRate', 0.0);
-        $response->assertViewHas('avgPagesPerVisit', 2.0);
-        $response->assertViewHas('summary', fn (array $s) => $s['total_visitors'] === 2 && $s['total_page_views'] === 3);
+        $response->assertViewHas('periodVisitors', 2);
+        $response->assertViewHas('periodPageViews', 3);
+        $response->assertViewHas('bounceRate', 50.0);
+        $response->assertViewHas('avgPagesPerVisit', 1.5);
+        $response->assertViewHas('summary', fn (array $s) => $s['total_visitors'] === 2 && $s['total_page_views'] === 4);
     });
 
     it('returns json stats endpoint', function () {
