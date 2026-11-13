@@ -23,7 +23,7 @@ A comprehensive visitor tracking package for Laravel applications with analytics
 ## Requirements
 
 - PHP 8.1+
-- Laravel 10.x, 11.x, or 12.x
+- Laravel 10.x, 11.x, 12.x, or 13.x (Laravel 13 requires PHP 8.3+)
 
 ## Installation
 
@@ -112,7 +112,7 @@ Route::middleware(['track-visitor'])->group(function () {
     // ... more routes
 });
 
-// Or globally in bootstrap/app.php (Laravel 11)
+// Or globally in bootstrap/app.php (Laravel 11+)
 ->withMiddleware(function (Middleware $middleware) {
     $middleware->web(append: [
         \Ghdj\VisitorTracker\Middleware\TrackVisitor::class,
@@ -140,8 +140,15 @@ $onlineNow = $stats->onlineVisitors();
 // Today's visitors
 $todayVisitors = $stats->todayVisitors();
 
-// Visitors in last N days
-$weeklyVisitors = $stats->visitorsLastDays(7);
+// New visitors (first seen) since a date
+$newThisWeek = $stats->totalVisitors(now()->startOfWeek());
+
+// Active visitors (new + returning) since a date
+$activeThisWeek = $stats->activeVisitors(now()->startOfWeek());
+
+// Bounce rate (%) and average pages per visit, optionally since a date
+$bounceRate = $stats->bounceRate(now()->startOfMonth());
+$pagesPerVisit = $stats->averagePagesPerVisit(now()->startOfMonth());
 
 // Most visited pages
 $topPages = $stats->mostVisitedPages(10);
@@ -160,6 +167,10 @@ $devices = $stats->deviceStats();
 
 // Country statistics (requires geolocation)
 $countries = $stats->countryStats();
+
+// Breakdowns accept an optional $since to limit them to visitors active in a period
+$browsersToday = $stats->browserStats(10, now()->startOfDay());
+$devicesThisMonth = $stats->deviceStats(now()->startOfMonth());
 
 // Summary of all stats
 $summary = $stats->summary();
@@ -304,7 +315,7 @@ you **must** configure Laravel's `TrustProxies` middleware **before** enabling
 visitor tracking. Without it, every request will appear to come from the proxy's
 IP address — breaking IP exclusions, geolocation accuracy, and IP anonymization.
 
-For Laravel 11/12, in `bootstrap/app.php`:
+For Laravel 11/12/13, in `bootstrap/app.php`:
 
 ```php
 ->withMiddleware(function (Middleware $middleware) {

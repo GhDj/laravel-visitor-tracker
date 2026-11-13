@@ -17,6 +17,11 @@ use Illuminate\Routing\Controller;
  */
 class DashboardController extends Controller
 {
+    /**
+     * Allowed values for the dashboard period filter.
+     */
+    protected const PERIODS = ['today', 'week', 'month', 'year'];
+
     public function __construct(
         protected StatisticsService $stats
     ) {}
@@ -26,24 +31,33 @@ class DashboardController extends Controller
      */
     public function index(Request $request): View
     {
-        $period = $request->get('period', 'week');
+        $period = $request->query('period');
+        if (! is_string($period) || ! in_array($period, self::PERIODS, true)) {
+            $period = 'week';
+        }
+
+        // Calendar boundaries (not rolling windows) so the labels "This Week" etc.
+        // are accurate and the cache keys derived from $since stay stable.
         $since = match ($period) {
             'today' => now()->startOfDay(),
-            'week' => now()->subWeek(),
-            'month' => now()->subMonth(),
-            'year' => now()->subYear(),
-            default => now()->subWeek(),
+            'week' => now()->startOfWeek(),
+            'month' => now()->startOfMonth(),
+            'year' => now()->startOfYear(),
         };
 
         return view('visitor-tracker::dashboard', [
-            'summary' => $this->stats->summary(),
+            'summary' => [
+                'total_visitors' => $this->stats->totalVisitors(),
+                'total_page_views' => $this->stats->totalPageViews(),
+                'online_visitors' => $this->stats->onlineVisitors(),
+            ],
             'period' => $period,
-            'periodVisitors' => $this->stats->totalVisitors($since),
+            'periodVisitors' => $this->stats->activeVisitors($since),
             'periodPageViews' => $this->stats->totalPageViews($since),
-            'browsers' => $this->stats->browserStats(10),
-            'platforms' => $this->stats->platformStats(10),
-            'devices' => $this->stats->deviceStats(),
-            'countries' => $this->stats->countryStats(10),
+            'browsers' => $this->stats->browserStats(10, $since),
+            'platforms' => $this->stats->platformStats(10, $since),
+            'devices' => $this->stats->deviceStats($since),
+            'countries' => $this->stats->countryStats(10, $since),
             'topPages' => $this->stats->mostVisitedPages(10, $since),
             'topReferrers' => $this->stats->topReferrers(10, $since),
             'visitorsByDay' => $this->stats->visitorsByPeriod('day', 30),

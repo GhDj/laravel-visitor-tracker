@@ -2,6 +2,46 @@
 
 All notable changes to `laravel-visitor-tracker` will be documented in this file.
 
+## [1.2.0] - 2026-11-13
+
+### Changed
+- **Dashboard periods now use calendar boundaries** — "This Week", "This Month"
+  and "This Year" start at `startOfWeek()`, `startOfMonth()` and
+  `startOfYear()` instead of rolling 7/30/365-day windows, matching their
+  labels and the `this_week_visitors`/`this_month_visitors` values in
+  `summary()`.
+- `bounceRate()` without a date now counts only visitors with at least one
+  recorded page view in its denominator.
+
+### Fixed
+- **Bounce rate could exceed 100%** for a period: numerator and denominator now
+  count the same population (visitors with at least one page view in the period).
+- **Pages per visit was inflated** by returning visitors: it now divides by the
+  distinct visitors active in the period.
+- **Period "Visitors" card only counted new visitors**: it now counts every
+  visitor active in the period, including returning ones.
+- **Period stats were never cached**: rolling windows (`now()->subWeek()`)
+  produced a new cache key every second and grew the key registry unbounded.
+  Periods now use calendar boundaries (`startOfWeek()`, `startOfMonth()`, …),
+  matching the "This Week"/"This Month" labels and `summary()`.
+- **Browser, platform, device and country panels ignored the period filter**:
+  they now reflect visitors active in the selected period. The corresponding
+  `StatisticsService` methods accept an optional `$since` argument.
+- Dashboard no longer runs unused `summary()` queries.
+- README documented a non-existent `visitorsLastDays()` method; replaced with
+  working examples.
+
+### Added
+- **Laravel 13 support** (requires PHP 8.3+). CI now tests Laravel 10–13 on
+  PHP 8.2–8.4.
+- `StatisticsService::activeVisitors(?DateTimeInterface $since)`.
+
+### Security
+- **XSS via `?period=`** — the period value was rendered unvalidated into an
+  Alpine `x-data` expression. It is now checked against an allow-list (falling
+  back to `week`) and emitted with `@js()`. Array values (`?period[]=`) no
+  longer cause a 500 error.
+
 ## [1.1.1] - 2026-10-03
 
 ### Fixed

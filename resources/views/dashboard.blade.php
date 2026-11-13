@@ -8,7 +8,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8" x-data="{ period: '{{ $period }}' }">
+    <div class="container mx-auto px-4 py-8" x-data="{ period: @js($period) }">
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Visitor Statistics</h1>

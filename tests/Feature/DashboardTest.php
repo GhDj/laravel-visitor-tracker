@@ -54,6 +54,56 @@ describe('dashboard controller', function () {
         $response->assertViewHas('period', 'month');
     });
 
+    it('falls back to week for unknown period values', function (string $query) {
+        $response = $this->get('/admin/visitor-tracker?'.$query);
+
+        $response->assertStatus(200);
+        $response->assertViewHas('period', 'week');
+    })->with([
+        'unknown string' => ['period=decade'],
+        'script injection' => ['period='.urlencode("';alert(1);'")],
+        'array value' => ['period[]=week'],
+    ]);
+
+    it('does not render the raw period value into the page', function () {
+        $response = $this->get('/admin/visitor-tracker?period='.urlencode("';alert(1);'"));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('alert(1)', false);
+    });
+
+    it('filters summary metrics by the selected period', function () {
+        $this->travelTo(now()->subYears(2));
+        $old = Visitor::create([
+            'session_id' => 'old-session',
+            'ip' => '192.168.1.2',
+            'is_bot' => false,
+            'last_activity_at' => now(),
+        ]);
+        $old->visits()->create(['url' => 'https://example.test/', 'path' => '/', 'method' => 'GET']);
+        $this->travelBack();
+
+        // The returning visitor views one page today (a bounce for this period).
+        $old->visits()->create(['url' => 'https://example.test/', 'path' => '/', 'method' => 'GET']);
+
+        $new = Visitor::create([
+            'session_id' => 'new-session',
+            'ip' => '192.168.1.3',
+            'is_bot' => false,
+            'last_activity_at' => now(),
+        ]);
+        $new->visits()->create(['url' => 'https://example.test/', 'path' => '/', 'method' => 'GET']);
+        $new->visits()->create(['url' => 'https://example.test/x', 'path' => '/x', 'method' => 'GET']);
+
+        $response = $this->get('/admin/visitor-tracker?period=today');
+
+        $response->assertViewHas('periodVisitors', 2);
+        $response->assertViewHas('periodPageViews', 3);
+        $response->assertViewHas('bounceRate', 50.0);
+        $response->assertViewHas('avgPagesPerVisit', 1.5);
+        $response->assertViewHas('summary', fn (array $s) => $s['total_visitors'] === 2 && $s['total_page_views'] === 4);
+    });
+
     it('returns json stats endpoint', function () {
         Visitor::create([
             'session_id' => 'test-session-1',
